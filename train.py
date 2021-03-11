@@ -58,13 +58,13 @@ train_loader = DataLoader(
     collate_fn=collate_fn,
 )
 
-# test_loader = DataLoader(
-#     dataset=test_dataset,
-#     batch_size=config.batch_size,
-#     shuffle=True,
-#     num_workers=4,
-#     collate_fn=collate_fn,
-# )
+test_loader = DataLoader(
+    dataset=test_dataset,
+    batch_size=config.batch_size,
+    shuffle=True,
+    num_workers=4,
+    collate_fn=collate_fn,
+)
 
 # model
 model = RadarTransformer(
@@ -82,6 +82,8 @@ optimizer = optim.Adam(model.parameters(),
                        lr=config.learning_rate, betas=(config.beta1, 0.999))
 criterion = nn.MSELoss()
 
+# pytorch_total_params = sum(p.numel() for p in model.parameters())
+# print(pytorch_total_params)
 
 # t = trange(config.epoch)
 step = 0
@@ -96,9 +98,9 @@ for l, r in train_loader:
     pad_mask = ~pad_mask.to(device)
 
     y = model(seq_padded, pad_mask)
-    print(y.shape)
+    # print(y.shape)
     y = y.detach()
-    # break
+    break
 
 
 # for epoch in t:

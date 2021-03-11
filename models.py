@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+from custom_transformer import TransformerEncoder, TransformerEncoderLayer, TransformerDecoder, TransformerDecoderLayer
+
 
 class MHAblock(nn.Module):
     def __init__(
@@ -46,11 +48,11 @@ class RadarTransformer(nn.Module):
         self.linear_projection = nn.Linear(features, embed_dim)
 
         # transformer encder block
-        encoder_layer = nn.TransformerEncoderLayer(
+        encoder_layer = TransformerEncoderLayer(
             d_model=embed_dim,
             nhead=nhead
         )
-        self.transformer_encoder = nn.TransformerEncoder(
+        self.transformer_encoder = TransformerEncoder(
             encoder_layer,
             num_layers=encoder_layers
         )
@@ -59,11 +61,11 @@ class RadarTransformer(nn.Module):
         self.quries = nn.Parameter(torch.randn(241, 1, embed_dim))
 
         # transformer decoder layer
-        decoder_layer = nn.TransformerDecoderLayer(
+        decoder_layer = TransformerDecoderLayer(
             d_model=embed_dim,
             nhead=nhead,
         )
-        self.transformer_decoder = nn.TransformerDecoder(
+        self.transformer_decoder = TransformerDecoder(
             decoder_layer,
             num_layers=decoder_layers,
         )
@@ -71,27 +73,35 @@ class RadarTransformer(nn.Module):
         # linear to output ranges
         self.linear_to_range = nn.Linear(embed_dim, 1)
 
-    def forward(self, x, pad_mask):
+    def forward(self, x, pad_mask, need_attention_map=False):
         n, b, _ = x.shape
 
         x = self.linear_projection(x)
 
         # transformer encoder
-        x = self.transformer_encoder(
+        x, ecd_att_map = self.transformer_encoder(
             x,
             src_key_padding_mask=pad_mask
         )
+        # print(ecd_att_map.shape)
 
+        # generate queries
         qur = self.quries.repeat(1, b, 1)
 
-        decoded = self.transformer_decoder(
+        # transformer decoder
+        decoded, dcd_att_map = self.transformer_decoder(
             tgt=qur,
             memory=x,
             memory_key_padding_mask=pad_mask,
         )
+        # print(dcd_att_map.shape)
 
+        # project to ranges
         ranges = self.linear_to_range(decoded)
         ranges = torch.squeeze(ranges)
         ranges = torch.transpose(ranges, 0, 1)
-        
-        return ranges
+
+        if need_attention_map:
+            return ranges, ecd_att_map, dcd_att_map
+        else:
+            return ranges
