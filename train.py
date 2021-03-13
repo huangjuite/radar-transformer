@@ -100,7 +100,7 @@ for l, r in train_loader:
     y = model(seq_padded, pad_mask)
     # print(y.shape)
     y = y.detach()
-    break
+    # break
 
 
 # for epoch in t:

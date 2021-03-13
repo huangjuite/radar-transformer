@@ -5,7 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from custom_transformer import TransformerEncoder, TransformerEncoderLayer, TransformerDecoder, TransformerDecoderLayer
+from custom_transformer import TransformerEncoder, TransformerEncoderLayer
+from custom_transformer import TransformerDecoder, TransformerDecoderLayer
 
 
 class MHAblock(nn.Module):
@@ -94,7 +95,7 @@ class RadarTransformer(nn.Module):
             memory=x,
             memory_key_padding_mask=pad_mask,
         )
-        # print(dcd_att_map.shape)
+        print(dcd_att_map.shape)
 
         # project to ranges
         ranges = self.linear_to_range(decoded)
