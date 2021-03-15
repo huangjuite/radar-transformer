@@ -1,6 +1,8 @@
 import torch
 import open3d as o3d
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import cv2
 import os

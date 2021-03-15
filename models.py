@@ -113,7 +113,7 @@ class Discriminator(nn.Module):
         kernel = 3
         stride = 2
         self.conv = nn.Sequential(
-            nn.Conv1d(1, 64, kernel_size=kernel, stride=stride),
+            nn.Conv1d(2, 64, kernel_size=kernel, stride=stride),
             nn.ReLU(),
             nn.Conv1d(64, 64, kernel_size=kernel, stride=stride),
             nn.ReLU()
@@ -137,6 +137,7 @@ class Discriminator(nn.Module):
 
         return x
 
+
 class DiscriminatorPatch(nn.Module):
     def __init__(self):
         super(DiscriminatorPatch, self).__init__()
@@ -158,3 +159,64 @@ class DiscriminatorPatch(nn.Module):
         x = self.conv(x)
 
         return x
+
+
+class DiscriminatorTransform(nn.Module):
+    def __init__(
+        self,
+        features=7,
+        embed_dim=64,
+        nhead=8,
+        encoder_layers=6,
+        patch_size=14,
+    ):
+        super(DiscriminatorTransform, self).__init__()
+
+        # linear projection layer
+        self.linear_projection = nn.Linear(features, embed_dim)
+
+        # learnable extra token positioned at very first
+        self.patch_size = patch_size
+        self.cls = nn.Parameter(torch.randn(patch_size, 1, embed_dim))
+
+        # transformer encder block
+        single_layer = TransformerEncoderLayer(
+            d_model=embed_dim,
+            nhead=nhead,
+        )
+        self.transformer_encoder = TransformerEncoder(
+            single_layer,
+            num_layers=encoder_layers,
+        )
+
+        self.linear2patch = nn.Linear(embed_dim, 1)
+        self.l_encoder = DiscriminatorPatch()
+        self.linearPatch = nn.Linear(patch_size*2, patch_size)
+
+    def forward(self, x, pad_mask, y, need_attention_map=False):
+        n, b, _ = x.shape
+
+        x = self.linear_projection(x)
+
+        cls_tokens = self.cls.repeat(1, b, 1)
+
+        # concat extra learnable token to first position
+        x = torch.cat((cls_tokens, x), dim=0)
+
+        # transformer encoder
+        x, ecd_att_map = self.transformer_encoder(x)
+
+        # cls head for patch gan
+        cls_heads = x[:self.patch_size, :, :]
+        cls_heads = self.linear2patch(cls_heads)
+        cls_heads = torch.transpose(cls_heads, 0, 1)
+        cls_heads = torch.squeeze(cls_heads)
+
+        # patch for laser from conv layer
+        y = self.l_encoder(y)
+        y = torch.squeeze(y)
+
+        d = torch.cat((cls_heads, y), dim=1)
+        d = self.linearPatch(d)
+
+        return d

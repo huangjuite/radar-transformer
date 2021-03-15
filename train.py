@@ -14,7 +14,7 @@ from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader, random_split
 
 from dataset import RadarDataset, collate_fn
-from models import RadarTransformer, Discriminator, DiscriminatorPatch
+from models import RadarTransformer, DiscriminatorTransform
 from utils import *
 
 torch.random.manual_seed(777)
@@ -25,7 +25,7 @@ hyper_parameter = dict(
     encoder_layer=6,
     decoder_layer=6,
     feature_dim=7,
-    embed_dim=128,
+    embed_dim=64,
     split_ratio=0.8,
     epoch=25,
     beta1=0.5,
@@ -99,9 +99,12 @@ netG = RadarTransformer(
 ).to(device)
 
 # netD = Discriminator().to(device)
-netD = DiscriminatorPatch().to(device)
-
-
+netD = DiscriminatorTransform(
+    features=config.feature_dim,
+    embed_dim=config.embed_dim,
+    nhead=config.nhead_attention,
+    encoder_layers=config.encoder_layer,
+).to(device)
 
 wandb.watch(netG)
 wandb.watch(netD)
@@ -145,9 +148,9 @@ for epoch in t:
 
         # patch size 14
         fake_label = Variable(torch.Tensor(
-            np.zeros((b_size, 1, 14))), requires_grad=False).to(device)
+            np.zeros((b_size, 14))), requires_grad=False).to(device)
         real_label = Variable(torch.Tensor(
-            np.ones((b_size, 1, 14))), requires_grad=False).to(device)
+            np.ones((b_size, 14))), requires_grad=False).to(device)
 
         ########################### train D ############################
 
@@ -155,15 +158,11 @@ for epoch in t:
         optimizer_d.zero_grad()
 
         # fake
-        # fake_xy = torch.cat((x, fake_y), dim=1)
-        fake_xy = fake_y
-        pred_fake = netD(fake_xy.detach())
+        pred_fake = netD(seq_padded, pad_mask, fake_y.detach())
         loss_D_fake = gan_loss(pred_fake, fake_label)
 
         # real
-        # real_xy = torch.cat((x, y), dim=1)
-        real_xy = y
-        pred_real = netD(real_xy)
+        pred_real = netD(seq_padded, pad_mask, y)
         loss_D_real = gan_loss(pred_real, real_label)
 
         # train
@@ -176,7 +175,7 @@ for epoch in t:
         set_requires_grad(netD, False)
         optimizer_g.zero_grad()
 
-        pred_fake = netD(fake_xy)
+        pred_fake = netD(seq_padded, pad_mask, fake_y)
         loss_G_gan = gan_loss(pred_fake, real_label)
         loss_G_l1 = l1_loss(fake_y, y) * config.lambda_l1
         loss_G = loss_G_gan + loss_G_l1
@@ -200,10 +199,10 @@ for epoch in t:
         ########################### visualize ##################################
 
         if (step / len(train_loader)) % config.visualize_epoch == 0:
-            print(fake_y.shape)
-            fake_y = fake_y.detach().cpu().numpy().reshape(-1, 241)[:config.vis_num]
-            l = l.detach().cpu().numpy().reshape(-1, 241)[:config.vis_num]
 
+            fake_y = fake_y.detach().cpu().numpy(
+            ).reshape(-1, 241)[:config.vis_num]
+            l = l.detach().cpu().numpy().reshape(-1, 241)[:config.vis_num]
 
             examples = []
             for i, (y, laser) in enumerate(zip(fake_y, l)):
