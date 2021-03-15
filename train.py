@@ -9,11 +9,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.nn.utils.rnn as rnn_utils
+from torch.autograd import Variable
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader, random_split
 
 from dataset import RadarDataset, collate_fn
-from models import RadarTransformer
+from models import RadarTransformer, Discriminator, DiscriminatorPatch
 from utils import *
 
 torch.random.manual_seed(777)
@@ -26,9 +27,13 @@ hyper_parameter = dict(
     feature_dim=7,
     embed_dim=128,
     split_ratio=0.8,
-    epoch=40,
+    epoch=25,
     beta1=0.5,
     learning_rate=0.0002,
+    lambda_l1=1,
+    vis_num=4,
+    visualize_epoch=2,
+
 )
 
 wandb.init(config=hyper_parameter,
@@ -66,90 +71,148 @@ test_loader = DataLoader(
     collate_fn=collate_fn,
 )
 
-# model
-model = RadarTransformer(
+
+# pytorch_total_params = sum(p.numel() for p in model.parameters())
+# print(pytorch_total_params)
+
+
+# for l, r in train_loader:
+#     seq_padded, lens = rnn_utils.pad_packed_sequence(r, batch_first=False)
+#     max_len = seq_padded.shape[0]
+#     pad_mask = torch.arange(max_len)[None, :] < lens[:, None]
+
+#     seq_padded = seq_padded.to(device)
+#     pad_mask = ~pad_mask.to(device)
+
+#     y = model(seq_padded, pad_mask)
+#     # print(y.shape)
+#     y = y.detach()
+#     # break
+
+
+netG = RadarTransformer(
     features=config.feature_dim,
     embed_dim=config.embed_dim,
     nhead=config.nhead_attention,
     encoder_layers=config.encoder_layer,
     decoder_layers=config.decoder_layer,
 ).to(device)
-wandb.watch(model)
+
+# netD = Discriminator().to(device)
+netD = DiscriminatorPatch().to(device)
 
 
-# train
-optimizer = optim.Adam(model.parameters(),
-                       lr=config.learning_rate, betas=(config.beta1, 0.999))
-criterion = nn.MSELoss()
 
-# pytorch_total_params = sum(p.numel() for p in model.parameters())
-# print(pytorch_total_params)
+wandb.watch(netG)
+wandb.watch(netD)
 
-# t = trange(config.epoch)
+# optimizers
+optimizer_g = optim.Adam(netG.parameters(),
+                         lr=config.learning_rate, betas=(config.beta1, 0.999))
+optimizer_d = optim.Adam(netD.parameters(),
+                         lr=config.learning_rate, betas=(config.beta1, 0.999))
+
+# criterion
+# gan_loss = nn.BCEWithLogitsLoss()
+gan_loss = nn.MSELoss()
+l1_loss = nn.L1Loss()
+
+
+def set_requires_grad(net, requires_grad=False):
+    for param in net.parameters():
+        param.requires_grad = requires_grad
+
+
 step = 0
+t = trange(config.epoch)
 
-for l, r in train_loader:
+for epoch in t:
+    for l, r in train_loader:
+        b_size = l.size(0)
 
-    seq_padded, lens = rnn_utils.pad_packed_sequence(r, batch_first=False)
-    max_len = seq_padded.shape[0]
-    pad_mask = torch.arange(max_len)[None, :] < lens[:, None]
+        seq_padded, lens = rnn_utils.pad_packed_sequence(r, batch_first=False)
+        max_len = seq_padded.shape[0]
+        pad_mask = torch.arange(max_len)[None, :] < lens[:, None]
 
-    seq_padded = seq_padded.to(device)
-    pad_mask = ~pad_mask.to(device)
+        seq_padded = seq_padded.to(device)
+        pad_mask = ~pad_mask.to(device)
 
-    y = model(seq_padded, pad_mask)
-    # print(y.shape)
-    y = y.detach()
-    # break
+        fake_y = netG(seq_padded, pad_mask)
+        fake_y = torch.unsqueeze(fake_y, 1)
+
+        y = l.to(device)
+        y = torch.unsqueeze(y, 1)
+
+        # patch size 14
+        fake_label = Variable(torch.Tensor(
+            np.zeros((b_size, 1, 14))), requires_grad=False).to(device)
+        real_label = Variable(torch.Tensor(
+            np.ones((b_size, 1, 14))), requires_grad=False).to(device)
+
+        ########################### train D ############################
+
+        set_requires_grad(netD, True)
+        optimizer_d.zero_grad()
+
+        # fake
+        # fake_xy = torch.cat((x, fake_y), dim=1)
+        fake_xy = fake_y
+        pred_fake = netD(fake_xy.detach())
+        loss_D_fake = gan_loss(pred_fake, fake_label)
+
+        # real
+        # real_xy = torch.cat((x, y), dim=1)
+        real_xy = y
+        pred_real = netD(real_xy)
+        loss_D_real = gan_loss(pred_real, real_label)
+
+        # train
+        loss_D = (loss_D_real + loss_D_fake) * 0.5
+        loss_D.backward()
+        optimizer_d.step()
+
+        ########################### train G ############################
+
+        set_requires_grad(netD, False)
+        optimizer_g.zero_grad()
+
+        pred_fake = netD(fake_xy)
+        loss_G_gan = gan_loss(pred_fake, real_label)
+        loss_G_l1 = l1_loss(fake_y, y) * config.lambda_l1
+        loss_G = loss_G_gan + loss_G_l1
+        loss_G.backward()
+        optimizer_g.step()
+
+        ########################### log ##################################
+
+        metrics = {
+            'loss_D_real': loss_D_real,
+            'loss_D_fake': loss_D_fake,
+            'loss_D': loss_D,
+            'loss_G_gan': loss_G_gan,
+            'loss_G_l1': loss_G_l1,
+            'loss_G': loss_G,
+        }
+        wandb.log(metrics)
+        step += 1
+        t.set_description('setp: %d' % step)
+
+        ########################### visualize ##################################
+
+        if (step / len(train_loader)) % config.visualize_epoch == 0:
+            print(fake_y.shape)
+            fake_y = fake_y.detach().cpu().numpy().reshape(-1, 241)[:config.vis_num]
+            l = l.detach().cpu().numpy().reshape(-1, 241)[:config.vis_num]
 
 
-# for epoch in t:
-#     # train
-#     for x, y in train_loader:
-#         x = x[:, :config.sequence_length]
-#         x = x.to(device)
-#         x = x.transpose(0, 1)
-#         y = y.to(device)
+            examples = []
+            for i, (y, laser) in enumerate(zip(fake_y, l)):
+                examples.append(laser_visual([y, laser], show=False))
 
-#         optimizer.zero_grad()
-#         x_hat = model(x)
-#         loss = criterion(x_hat, y)
-#         loss.backward()
-#         optimizer.step()
+            wandb.log({"example_%d" %
+                       step: [wandb.Image(img) for img in examples]})
 
-#         step += 1
-#         metrics = {
-#             'train_loss': loss,
-#             'custom_step': step,
-#         }
-#         wandb.log(metrics)
-#         t.set_description("step %d, loss %.4f" % (step, loss.item()))
 
-#     # test
-#     model.eval()
-#     test_loss = []
-#     for fx, y in test_loader:
-#         x = fx[:, :config.sequence_length]
-#         x = x.to(device)
-#         x = x.transpose(0, 1)
-#         y = y.to(device)
-
-#         x_hat = model(x)
-#         loss = criterion(x_hat, y)
-#         test_loss.append(loss.item())
-
-#     model.train()
-#     test_loss = np.mean(test_loss)
-#     metrics = {
-#         'test_loss': test_loss,
-#         'custom_step': step,
-#     }
-#     wandb.log(metrics)
-
-# # visualization
-# fx = fx[0].numpy()
-# x_hat = x_hat[0].cpu().detach().cpu().numpy().astype(np.float64)
-# img = draw_dataset(fx, x_hat, config.output_sequence, save=True)
-# wandb.log({"example%d"%step: wandb.Image(img)})
-
-# torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pth"))
+################## save model #################
+torch.save(netG.state_dict(), os.path.join(
+    wandb.run.dir, "model.pth"))

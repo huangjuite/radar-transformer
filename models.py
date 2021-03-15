@@ -95,7 +95,6 @@ class RadarTransformer(nn.Module):
             memory=x,
             memory_key_padding_mask=pad_mask,
         )
-        print(dcd_att_map.shape)
 
         # project to ranges
         ranges = self.linear_to_range(decoded)
@@ -106,3 +105,56 @@ class RadarTransformer(nn.Module):
             return ranges, ecd_att_map, dcd_att_map
         else:
             return ranges
+
+
+class Discriminator(nn.Module):
+    def __init__(self):
+        super(Discriminator, self).__init__()
+        kernel = 3
+        stride = 2
+        self.conv = nn.Sequential(
+            nn.Conv1d(1, 64, kernel_size=kernel, stride=stride),
+            nn.ReLU(),
+            nn.Conv1d(64, 64, kernel_size=kernel, stride=stride),
+            nn.ReLU()
+        )
+
+        dim = 64*59
+        self.linear = nn.Sequential(
+            nn.Linear(dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, 128),
+            nn.ReLU(),
+            nn.Linear(128, 1),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+
+        x = self.conv(x)
+        x = x.view(x.size(0), -1)
+        x = self.linear(x)
+
+        return x
+
+class DiscriminatorPatch(nn.Module):
+    def __init__(self):
+        super(DiscriminatorPatch, self).__init__()
+        kernel = 3
+        stride = 2
+        self.conv = nn.Sequential(
+            nn.Conv1d(1, 64, kernel_size=kernel, stride=stride),
+            nn.ReLU(),
+            nn.Conv1d(64, 32, kernel_size=kernel, stride=stride),
+            nn.ReLU(),
+            nn.Conv1d(32, 16, kernel_size=kernel, stride=stride),
+            nn.ReLU(),
+            nn.Conv1d(16, 1, kernel_size=kernel, stride=stride),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+
+        x = self.conv(x)
+
+        return x
