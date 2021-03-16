@@ -27,13 +27,13 @@ hyper_parameter = dict(
     feature_dim=7,
     embed_dim=64,
     split_ratio=0.8,
+    patch_size=10,
     epoch=25,
     beta1=0.5,
     learning_rate=0.0002,
     lambda_l1=1,
     vis_num=4,
     visualize_epoch=2,
-
 )
 
 wandb.init(config=hyper_parameter,
@@ -75,21 +75,6 @@ test_loader = DataLoader(
 # pytorch_total_params = sum(p.numel() for p in model.parameters())
 # print(pytorch_total_params)
 
-
-# for l, r in train_loader:
-#     seq_padded, lens = rnn_utils.pad_packed_sequence(r, batch_first=False)
-#     max_len = seq_padded.shape[0]
-#     pad_mask = torch.arange(max_len)[None, :] < lens[:, None]
-
-#     seq_padded = seq_padded.to(device)
-#     pad_mask = ~pad_mask.to(device)
-
-#     y = model(seq_padded, pad_mask)
-#     # print(y.shape)
-#     y = y.detach()
-#     # break
-
-
 netG = RadarTransformer(
     features=config.feature_dim,
     embed_dim=config.embed_dim,
@@ -104,6 +89,7 @@ netD = DiscriminatorTransform(
     embed_dim=config.embed_dim,
     nhead=config.nhead_attention,
     encoder_layers=config.encoder_layer,
+    patch_size=config.patch_size,
 ).to(device)
 
 wandb.watch(netG)
@@ -141,16 +127,16 @@ for epoch in t:
         pad_mask = ~pad_mask.to(device)
 
         fake_y = netG(seq_padded, pad_mask)
-        fake_y = torch.unsqueeze(fake_y, 1)
+        # fake_y = torch.unsqueeze(fake_y, 1)
 
         y = l.to(device)
-        y = torch.unsqueeze(y, 1)
+        # y = torch.unsqueeze(y, 1)
 
-        # patch size 14
+        # patch size config.path_size
         fake_label = Variable(torch.Tensor(
-            np.zeros((b_size, 14))), requires_grad=False).to(device)
+            np.zeros((b_size, config.patch_size))), requires_grad=False).to(device)
         real_label = Variable(torch.Tensor(
-            np.ones((b_size, 14))), requires_grad=False).to(device)
+            np.ones((b_size, config.patch_size))), requires_grad=False).to(device)
 
         ########################### train D ############################
 
