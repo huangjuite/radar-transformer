@@ -8,8 +8,6 @@ from sensor_msgs.msg import LaserScan
 dataset = RadarDataset()
 
 l, r = dataset[100]
-l = l.numpy()
-r = r.numpy()
 
 # draw_dataset(l, r)
 rospy.init_node('visualize_radar')

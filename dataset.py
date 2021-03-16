@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import pickle as pkl
 import copy
-
+import os
+from tqdm import tqdm
 import torch.nn.utils.rnn as rnn_utils
 from torch.utils.data.dataset import Dataset
 from scipy.spatial.transform import Rotation as R
@@ -24,12 +25,20 @@ def collate_fn(batch):
 
 
 class RadarDataset(Dataset):
-    def __init__(self):
-        folder = '/media/ray/intelSSD/radar'
-        date_time = '0805_1108'
+    def __init__(self, folder='/media/ray/intelSSD/radar'):
 
-        with open(folder+'/dataset_'+date_time+'.pkl', 'rb') as f:
-            self.data = pkl.load(f)
+        paths = []
+        folder = '/media/ray/intelSSD/radar/'
+        allfiles = os.listdir(folder)
+        files = []
+        for f in allfiles:
+            if f[-4:] == '.pkl':
+                files.append(f)
+
+        self.data = []
+        for f in tqdm(files):
+            with open(folder+f, 'rb') as h:
+                self.data.extend(pkl.load(h))
 
         print('dataset loaded, length:%d' % len(self.data))
 
