@@ -5,7 +5,7 @@ import rospy
 from visualization_msgs.msg import Marker, MarkerArray
 from sensor_msgs.msg import LaserScan
 
-dataset = RadarDataset()
+dataset = RadarDataset(remove_oulier=1.2)
 
 l, r = dataset[100]
 

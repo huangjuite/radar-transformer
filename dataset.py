@@ -1,13 +1,15 @@
+
+import copy
+import os
 import torch
 import pandas as pd
 import numpy as np
 import pickle as pkl
-import copy
-import os
 from tqdm import tqdm
+import open3d as o3d
+
 import torch.nn.utils.rnn as rnn_utils
 from torch.utils.data.dataset import Dataset
-from scipy.spatial.transform import Rotation as R
 
 
 # rnn_utils.pack_sequence
@@ -25,22 +27,23 @@ def collate_fn(batch):
 
 
 class RadarDataset(Dataset):
-    def __init__(self, folder='/media/ray/intelSSD/radar'):
+    def __init__(self, folder='/media/ray/intelSSD/radar/pkl/', remove_oulier=None):
 
         paths = []
-        folder = '/media/ray/intelSSD/radar/'
         allfiles = os.listdir(folder)
         files = []
         for f in allfiles:
             if f[-4:] == '.pkl':
                 files.append(f)
-
         self.data = []
         for f in tqdm(files):
             with open(folder+f, 'rb') as h:
                 self.data.extend(pkl.load(h))
-
         print('dataset loaded, length:%d' % len(self.data))
+        
+        self.remove_oulier = remove_oulier
+        if remove_oulier is not None:
+            print('remove outlier=%f'%remove_oulier)
 
     def __getitem__(self, index):
 
@@ -49,6 +52,13 @@ class RadarDataset(Dataset):
         # t = d[0]
         lidar = d[1:242]
         radar = d[242:].reshape(-1, 7)
+
+        if self.remove_oulier is not None:
+            pt = radar[:, 3:6]
+            pcd = o3d.geometry.PointCloud()
+            pcd.points = o3d.utility.Vector3dVector(pt)
+            cl, ind = pcd.remove_radius_outlier(nb_points=1, radius=self.remove_oulier)
+            radar = radar[ind]
 
         return lidar, radar
 
