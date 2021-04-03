@@ -37,11 +37,11 @@ class RadarDataset(Dataset):
                 files.append(f)
         self.data = []
         t = tqdm(files)
-        for f in :
+        for f in t:
             with open(folder+f, 'rb') as h:
                 self.data.extend(pkl.load(h))
-        t.set_description('dataset loaded, length:%d' % len(self.data))
-        
+        print('\ndataset loaded, length:%d' % len(self.data))
+
         self.remove_oulier = remove_oulier
         if remove_oulier is not None:
             print('remove outlier=%f'%remove_oulier)

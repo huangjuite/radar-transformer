@@ -34,7 +34,6 @@ hyper_parameter = dict(
     gamma=0.99,
     lambda_l2=1e-4,       # l2 regularization weight
     epoch=20,
-    split_ratio=0.8,
     batch_size=8,
 )
 wandb.init(config=hyper_parameter,
@@ -105,14 +104,13 @@ class RDPG(object):
     def update_model(self) -> Tuple[torch.Tensor, ...]:
         """Update the model by gradient descent."""
         device = self.device
-        i = 0
 
         t = trange(config.epoch)
 
         epoch_len = float(len(train_loader))
 
         for epoch in t:
-
+            i = 0
             for l, r in train_loader:
                 b_size = l.size(0)
 
