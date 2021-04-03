@@ -36,10 +36,11 @@ class RadarDataset(Dataset):
             if f[-4:] == '.pkl':
                 files.append(f)
         self.data = []
-        for f in tqdm(files):
+        t = tqdm(files)
+        for f in :
             with open(folder+f, 'rb') as h:
                 self.data.extend(pkl.load(h))
-        print('dataset loaded, length:%d' % len(self.data))
+        t.set_description('dataset loaded, length:%d' % len(self.data))
         
         self.remove_oulier = remove_oulier
         if remove_oulier is not None:

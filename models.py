@@ -107,6 +107,61 @@ class RadarTransformer(nn.Module):
             return ranges
 
 
+class RadarEncoder(nn.Module):
+    def __init__(
+        self,
+        features=7,
+        embed_dim=64,
+        nhead=8,
+        layers=6,
+        output_embeding=512,
+    ):
+        super(RadarEncoder, self).__init__()
+        # linear projection layer
+        self.linear_projection = nn.Linear(features, embed_dim)
+
+        # decoder queries
+        self.quries = nn.Parameter(torch.randn(output_embeding, 1, embed_dim))
+
+        # transformer decoder layer
+        decoder_layer = TransformerDecoderLayer(
+            d_model=embed_dim,
+            nhead=nhead,
+        )
+        self.transformer_decoder = TransformerDecoder(
+            decoder_layer,
+            num_layers=layers,
+        )
+
+        # linear to output ranges
+        self.linear_to_output = nn.Linear(embed_dim, 1)
+
+    def forward(self, x, pad_mask, need_attention_map=False):
+        n, b, _ = x.shape
+
+        x = self.linear_projection(x)
+
+        # generate queries
+        qur = self.quries.repeat(1, b, 1)
+
+        # transformer decoder
+        decoded, dcd_att_map = self.transformer_decoder(
+            tgt=qur,
+            memory=x,
+            memory_key_padding_mask=pad_mask,
+        )
+
+        # project to feature embedding
+        embed = self.linear_to_output(decoded)
+        embed = torch.squeeze(embed)
+        embed = torch.transpose(embed, 0, 1)
+
+        if need_attention_map:
+            return embed, dcd_att_map
+        else:
+            return embed
+
+
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
@@ -198,9 +253,9 @@ class DiscriminatorTransform(nn.Module):
 
     def forward(self, x, pad_mask, y, need_attention_map=False):
         n, b, _ = x.shape
-        
+
         x = self.linear_projection(x)
-        
+
         y = torch.transpose(y, 0, 1)
         y = torch.unsqueeze(y, 2)
         y = self.linear_projection_laser(y)
