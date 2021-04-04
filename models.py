@@ -74,7 +74,7 @@ class RadarTransformer(nn.Module):
         # linear to output ranges
         self.linear_to_range = nn.Linear(embed_dim, 1)
 
-    def forward(self, x, pad_mask, need_attention_map=False):
+    def forward(self, x, pad_mask, attention_map=False):
         n, b, _ = x.shape
 
         x = self.linear_projection(x)
@@ -99,9 +99,10 @@ class RadarTransformer(nn.Module):
         # project to ranges
         ranges = self.linear_to_range(decoded)
         ranges = torch.squeeze(ranges)
-        ranges = torch.transpose(ranges, 0, 1)
+        if b>1:
+            ranges = torch.transpose(ranges, 0, 1)
 
-        if need_attention_map:
+        if attention_map:
             return ranges, ecd_att_map, dcd_att_map
         else:
             return ranges
