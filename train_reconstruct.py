@@ -26,18 +26,15 @@ hyper_parameter = dict(
     decoder_layer=6,
     feature_dim=7,
     embed_dim=64,
-    split_ratio=0.8,
-    patch_size=1,
     epoch=25,
     beta1=0.5,
-    learning_rate=0.0002,
-    lambda_l1=1,
+    learning_rate=3e-4,
     vis_num=4,
     visualize_epoch=2,
 )
 
 wandb.init(config=hyper_parameter,
-           project="radar-transformer", name='test')
+           project="radar-transformer", name='generator-only')
 config = wandb.config
 
 
@@ -69,28 +66,15 @@ netG = RadarTransformer(
     decoder_layers=config.decoder_layer,
 ).to(device)
 
-# netD = Discriminator().to(device)
-netD = DiscriminatorTransform(
-    features=config.feature_dim,
-    embed_dim=config.embed_dim,
-    nhead=config.nhead_attention,
-    encoder_layers=config.encoder_layer,
-    patch_size=config.patch_size,
-).to(device)
-
 wandb.watch(netG)
-wandb.watch(netD)
 
 # optimizers
 optimizer_g = optim.Adam(netG.parameters(),
                          lr=config.learning_rate, betas=(config.beta1, 0.999))
-optimizer_d = optim.Adam(netD.parameters(),
-                         lr=config.learning_rate, betas=(config.beta1, 0.999))
 
 # criterion
 # gan_loss = nn.BCEWithLogitsLoss()
-gan_loss = nn.MSELoss()
-l1_loss = nn.L1Loss()
+criterion = nn.MSELoss()
 
 
 def set_requires_grad(net, requires_grad=False):
@@ -112,57 +96,25 @@ for epoch in t:
         seq_padded = seq_padded.to(device)
         pad_mask = ~pad_mask.to(device)
 
-        fake_y = netG(seq_padded, pad_mask)
-        # fake_y = torch.unsqueeze(fake_y, 1)
-
-        y = l.to(device)
-        # y = torch.unsqueeze(y, 1)
-
-        # patch size config.path_size
-        fake_label = Variable(torch.Tensor(
-            np.zeros((b_size, config.patch_size))), requires_grad=False).to(device)
-        real_label = Variable(torch.Tensor(
-            np.ones((b_size, config.patch_size))), requires_grad=False).to(device)
-
-        ########################### train D ############################
-
-        set_requires_grad(netD, True)
-        optimizer_d.zero_grad()
-
-        # fake
-        pred_fake = netD(seq_padded, pad_mask, fake_y.detach())
-        loss_D_fake = gan_loss(pred_fake, fake_label)
-
-        # real
-        pred_real = netD(seq_padded, pad_mask, y)
-        loss_D_real = gan_loss(pred_real, real_label)
-
-        # train
-        loss_D = (loss_D_real + loss_D_fake) * 0.5
-        loss_D.backward()
-        optimizer_d.step()
-
-        ########################### train G ############################
-
-        set_requires_grad(netD, False)
         optimizer_g.zero_grad()
 
-        pred_fake = netD(seq_padded, pad_mask, fake_y)
-        loss_G_gan = gan_loss(pred_fake, real_label)
-        loss_G_l1 = l1_loss(fake_y, y) * config.lambda_l1
-        loss_G = loss_G_gan + loss_G_l1
-        loss_G.backward()
+        fake_y = netG(seq_padded, pad_mask)
+
+        y = l.to(device)
+
+
+        ########################### train G ############################
+        
+        loss = criterion(fake_y, l)
+
+        loss.backward()
+
         optimizer_g.step()
 
         ########################### log ##################################
 
         metrics = {
-            'loss_D_real': loss_D_real,
-            'loss_D_fake': loss_D_fake,
-            'loss_D': loss_D,
-            'loss_G_gan': loss_G_gan,
-            'loss_G_l1': loss_G_l1,
-            'loss_G': loss_G,
+            'loss': loss,
         }
         wandb.log(metrics)
         step += 1

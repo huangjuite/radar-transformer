@@ -223,7 +223,7 @@ class DiscriminatorTransform(nn.Module):
         features=7,
         embed_dim=64,
         nhead=8,
-        encoder_layers=6,
+        layers=6,
         patch_size=14,
     ):
         super(DiscriminatorTransform, self).__init__()
@@ -238,40 +238,54 @@ class DiscriminatorTransform(nn.Module):
 
         # positional embedding for laser token
         self.pos_embedding = nn.Parameter(
-            torch.randn(241, 1, embed_dim))
+            torch.randn(self.patch_size+241, 1, embed_dim))
 
         # transformer encder block
-        single_layer = TransformerEncoderLayer(
+        # single_layer = TransformerEncoderLayer(
+        #     d_model=embed_dim,
+        #     nhead=nhead,
+        # )
+        # self.transformer_encoder = TransformerEncoder(
+        #     single_layer,
+        #     num_layers=encoder_layers,
+        # )
+
+        # transformer decoder block
+        decoder_layer = TransformerDecoderLayer(
             d_model=embed_dim,
             nhead=nhead,
         )
-        self.transformer_encoder = TransformerEncoder(
-            single_layer,
-            num_layers=encoder_layers,
+        self.transformer_decoder = TransformerDecoder(
+            decoder_layer,
+            num_layers=layers,
         )
 
         self.linear2patch = nn.Linear(embed_dim, 1)
 
-    def forward(self, x, pad_mask, y, need_attention_map=False):
-        n, b, _ = x.shape
+    def forward(self, radar, pad_mask, laser, need_attention_map=False):
+        n, b, _ = radar.shape
 
-        x = self.linear_projection(x)
+        radar = self.linear_projection(radar)
 
-        y = torch.transpose(y, 0, 1)
-        y = torch.unsqueeze(y, 2)
-        y = self.linear_projection_laser(y)
-        y += self.pos_embedding
+        laser = torch.transpose(laser, 0, 1)
+        laser = torch.unsqueeze(laser, 2)
+        laser = self.linear_projection_laser(laser)
 
         cls_tokens = self.cls.repeat(1, b, 1)
 
         # concat tokens to first position
-        x = torch.cat((cls_tokens, x), dim=0)
+        input_seq = torch.cat((cls_tokens, laser), dim=0)
+        input_seq += self.pos_embedding
 
         # transformer encoder
-        x, ecd_att_map = self.transformer_encoder(x)
+        output_seq, dcd_att_map = self.transformer_decoder(
+            tgt=input_seq,
+            memory=radar,
+            memory_key_padding_mask=pad_mask,
+        )
 
         # cls head for patch gan
-        cls_heads = x[:self.patch_size, :, :]
+        cls_heads = output_seq[:self.patch_size, :, :]
         cls_heads = self.linear2patch(cls_heads)
         cls_heads = torch.transpose(cls_heads, 0, 1)
         cls_heads = torch.squeeze(cls_heads)

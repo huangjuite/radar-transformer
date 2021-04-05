@@ -42,7 +42,7 @@ hyper_parameter = dict(
     layers=6,
 )
 wandb.init(config=hyper_parameter,
-           project="mmWave-contrastive-transformer", name="cross-attention-mse")
+           project="mmWave-contrastive-transformer", name="cross-attention-mse-twcc")
 
 config = wandb.config
 print(config)
