@@ -27,7 +27,7 @@ def collate_fn(batch):
 
 
 class RadarDataset(Dataset):
-    def __init__(self, folder='/media/ray/intelSSD/radar/pkl/', remove_oulier=None):
+    def __init__(self, folder='./data/pkl/', remove_oulier=None):
 
         paths = []
         allfiles = os.listdir(folder)

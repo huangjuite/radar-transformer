@@ -35,6 +35,11 @@ hyper_parameter = dict(
     lambda_l2=1e-4,       # l2 regularization weight
     epoch=20,
     batch_size=8,
+    features=7,
+    embed_dim=64,
+    nhead=8,
+    output_embeding=512,
+    layers=6,
 )
 wandb.init(config=hyper_parameter,
            project="mmWave-contrastive-transformer", name="cross-attention-mse")
@@ -80,16 +85,16 @@ class RDPG(object):
             out_dim=action_dim
         ).to(self.device)
         self.actor_laser.load_state_dict(
-            torch.load("actor_s1536_f1869509.pth"))
+            torch.load("model/actor_s1536_f1869509.pth"))
         self.actor_laser.eval()
 
         # network perceiver
         self.actor_radar = RadarEncoder(
-            features=7,
-            embed_dim=64,
-            nhead=8,
-            layers=6,
-            output_embeding=512,
+            features=config.features,
+            embed_dim=config.embed_dim,
+            nhead=config.nhead,
+            layers=config.layers,
+            output_embeding=config.output_embeding,
         ).to(self.device)
 
         wandb.watch(self.actor_radar)

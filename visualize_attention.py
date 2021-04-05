@@ -91,8 +91,8 @@ def make_attention(layer, idx, attention, radar, laser):
     anchor_mk.pose.orientation.w = 1
     anchor_mk.color.a = 1
     anchor_mk.color.r = 1
-    anchor_mk.color.g = 0.2
-    anchor_mk.color.b = 0.8
+    anchor_mk.color.g = 1
+    anchor_mk.color.b = 1
     pub_anchor.publish(anchor_mk)
 
     lines = MarkerArray()
@@ -112,8 +112,8 @@ def make_attention(layer, idx, attention, radar, laser):
         r_p.z = p[2]
         line.points.append(r_p)
         line.color.r = 1
-        line.color.g = 0.2
-        line.color.b = 0.8
+        line.color.g = 1
+        line.color.b = 1
         line.color.a = min(at[i]*10, 1)
         lines.markers.append(line)
 

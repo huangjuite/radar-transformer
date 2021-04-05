@@ -6,10 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /LaserScan2/Status1
-        - /Marker1/Status1
       Splitter Ratio: 0.5676470398902893
-    Tree Height: 719
+    Tree Height: 363
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -174,7 +172,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 19.151134490966797
+      Distance: 18.11471939086914
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -182,17 +180,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.5770478248596191
-        Y: 0.686912477016449
-        Z: -1.2308359146118164e-05
+        X: 0.5152228474617004
+        Y: -0.3974653482437134
+        Z: -2.2285679733613506e-05
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.089797019958496
+      Pitch: 1.4947972297668457
       Target Frame: <Fixed Frame>
-      Yaw: 3.1535091400146484
+      Yaw: 3.1403725147247314
     Saved: ~
 Window Geometry:
   Displays:
