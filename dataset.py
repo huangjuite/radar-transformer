@@ -56,10 +56,10 @@ class RadarDataset(Dataset):
 
         # t = d[0]
         lidar = d[1:242]
-        radar = d[242:].reshape(-1, 7)
+        radar = d[242:].reshape(-1, 7)[:,1:]
 
         if self.remove_oulier is not None:
-            pt = radar[:, 3:6]
+            pt = radar[:, 2:5]
             pcd = o3d.geometry.PointCloud()
             pcd.points = o3d.utility.Vector3dVector(pt)
             cl, ind = pcd.remove_radius_outlier(nb_points=1, radius=self.remove_oulier)

@@ -74,7 +74,7 @@ optimizer_g = optim.Adam(netG.parameters(),
 
 # criterion
 # gan_loss = nn.BCEWithLogitsLoss()
-criterion = nn.l1Loss()
+criterion = nn.L1Loss()
 
 
 def set_requires_grad(net, requires_grad=False):
