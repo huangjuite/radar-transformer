@@ -37,7 +37,7 @@ class MHAblock(nn.Module):
 class RadarTransformer(nn.Module):
     def __init__(
         self,
-        features=6,
+        features=7,
         embed_dim=64,
         nhead=8,
         encoder_layers=6,

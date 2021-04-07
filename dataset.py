@@ -56,7 +56,7 @@ class RadarDataset(Dataset):
 
         # t = d[0]
         lidar = d[1:242]
-        radar = d[242:].reshape(-1, 7)[:,1:]
+        radar = d[242:].reshape(-1, 7)
 
         if self.remove_oulier is not None:
             pt = radar[:, 2:5]
