@@ -158,7 +158,7 @@ class ActorLatent(Actor):
 class ActorRadar(nn.Module):
     def __init__(
         self,
-        actor_state_dict="actor_s1536_f1869509.pth",
+        actor_state_dict="s1536_f1869509.pth",
         encoder_state_dict="radar_encoder.pth",
 
     ):

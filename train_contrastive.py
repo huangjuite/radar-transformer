@@ -85,7 +85,7 @@ class RDPG(object):
             out_dim=action_dim
         ).to(self.device)
         self.actor_laser.load_state_dict(
-            torch.load("model/actor_s1536_f1869509.pth"))
+            torch.load("model/s1536_f1869509.pth"))
         self.actor_laser.eval()
 
         # network perceiver
