@@ -20,7 +20,7 @@ from utils import *
 torch.random.manual_seed(777)
 
 hyper_parameter = dict(
-    batch_size=8,
+    batch_size=24,
     nhead_attention=8,
     encoder_layer=6,
     decoder_layer=6,
@@ -74,7 +74,7 @@ optimizer_g = optim.Adam(netG.parameters(),
 
 # criterion
 # gan_loss = nn.BCEWithLogitsLoss()
-criterion = nn.MSELoss()
+criterion = nn.L1Loss()
 
 
 def set_requires_grad(net, requires_grad=False):
