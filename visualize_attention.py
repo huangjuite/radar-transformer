@@ -35,7 +35,7 @@ netG = RadarTransformer(
     decoder_layers=6,
 ).to(device)
 
-netG.load_state_dict(torch.load("model/transformer_reconstruct.pth"))
+netG.load_state_dict(torch.load("model/transformer_cgan.pth"))
 netG.eval()
 
 dataset = RadarDataset(remove_oulier=1.2)
@@ -168,7 +168,7 @@ def update(key):
         if key.char == ('n'):
             indx = random.randint(0, len(dataset)-1)
             l, r = dataset[indx]
-
+            print('data index: ', indx)
             r_t = torch.Tensor(r).to(device)
             r_t = torch.unsqueeze(r_t, dim=1)
             l_t, encoder_attention, decoder_attention = netG(
@@ -187,9 +187,10 @@ def update(key):
                 id = str(int(radar[2]))
                 v = radar[6]
                 p = radar[3:6]
-                mk = make_marker(p, ns, 2*i+1, id, c=v, min_v=min_v, max_v=max_v)
+                mk = make_marker(p, ns, 2*i+1, id, c=v,
+                                 min_v=min_v, max_v=max_v)
                 tk = make_marker(p, ns, 2*i, id, c=v, min_v=min_v,
-                                max_v=max_v, text=True)
+                                 max_v=max_v, text=True)
                 mks.markers.append(mk)
                 mks.markers.append(tk)
             pub.publish(mks)

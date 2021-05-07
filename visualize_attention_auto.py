@@ -191,10 +191,10 @@ indx = random.randint(0, len(dataset)-1)
 
 # hall
 # indx = 35762
-# indx = 39714
+indx = 39714
 
-# parkin
-indx = 43030
+# parking
+# indx = 43030
 
 print('indx: ', indx)
 l, r = dataset[indx]

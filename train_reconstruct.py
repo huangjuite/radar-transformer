@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import wandb
 from tqdm import tqdm, trange
+import matplotlib
+matplotlib.use('Agg')
 
 import torch
 import torch.nn as nn
