@@ -158,23 +158,39 @@ class ActorLatent(Actor):
 class ActorRadar(nn.Module):
     def __init__(
         self,
+        device,
+        in_dim: int,
+        out_dim: int,
         actor_state_dict="s1536_f1869509.pth",
         encoder_state_dict="radar_encoder.pth",
 
     ):
         super(ActorRadar, self).__init__()
 
-        self.encoder = RadarEncoder()
+        self.encoder = RadarEncoder().eval()
         self.encoder.load_state_dict(torch.load(encoder_state_dict))
 
-        self.actor = ActorLatent()
+        self.actor = ActorLatent(
+            device,
+            in_dim,
+            out_dim,
+        )
         self.actor.load_state_dict(torch.load(actor_state_dict))
-    
-    def forward(self, radar, pos):
-        r = self.encoder(radar)
-        a = self.actor(r, pos)
 
-        return a
+    def forward(
+        self,
+        radar,
+        pos,
+        hn,
+        cn,
+    ):
+        r = self.encoder(radar, None).detach()
+        r = torch.unsqueeze(r, dim=0)
+        pos = torch.unsqueeze(pos, dim=0)
+        a, hn, cn = self.actor(pos, r,  hn, cn)
+
+        return a, hn, cn
+
 
 
 class Critic(nn.Module):
