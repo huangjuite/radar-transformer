@@ -155,7 +155,9 @@ class RadarEncoder(nn.Module):
         # project to feature embedding
         embed = self.linear_to_output(decoded)
         embed = torch.squeeze(embed)
-        embed = torch.transpose(embed, 0, 1)
+
+        if b>1:
+            embed = torch.transpose(embed, 0, 1)
 
         if need_attention_map:
             return embed, dcd_att_map

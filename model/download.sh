@@ -19,3 +19,12 @@ gdown --id 1B2ugYD11vKhcSiJR3loldEmOtpV3OnbQ
 echo -e "\e[93m download cGAN model 0827_1851.pth \e[0m"
 cd $cwd/cgan
 gdown --id 1KSgA1O-BKuRzav8Ew-bALgKJY490qZKO
+
+# rl contrastive
+echo -e "\e[93m download contrastive mse model mse.pth \e[0m"
+cd $cwd/rdpg_torch_forward
+gdown --id 1gffTWAI3hOGE09FjF0kc_of5xLprdtK1
+
+echo -e "\e[93m radar transformer radar encoder \e[0m"
+cd $cwd/transformer
+gdown --id 1ggZ3JdnlXc8atXW77y-rQwMolOge4GjX

@@ -2,14 +2,8 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import random
-import math
 from dataset import RadarDataset
-import rospy
-from visualization_msgs.msg import Marker, MarkerArray
-from geometry_msgs.msg import Point
-from sensor_msgs.msg import LaserScan
+
 
 from utils import draw_dataset, draw_laser, filter, pc_to_laser, laser_visual_one
 from models import RadarTransformer
