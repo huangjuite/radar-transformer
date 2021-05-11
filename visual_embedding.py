@@ -98,7 +98,7 @@ for i in range(indx, indx+500):
     rl = torch.unsqueeze(rl, dim=0)
 
     r_embd = encoder_transformer(r_t, None).detach().cpu()
-    rl_embd = encoder(rl).detach().cpu()[0]
+    rl_embd = encoder_cnn(rl).detach().cpu()[0]
     l_embd = encoder(l).detach().cpu()[0]
 
     embds.append(r_embd)
