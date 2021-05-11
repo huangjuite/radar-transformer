@@ -85,7 +85,7 @@ embds = []
 labels = []
 imgs = []
 
-for i in range(indx, indx+500):
+for i in range(indx, indx+50):
     l, r, rl = get_data(i)
 
     r_t = torch.Tensor(r).to(device)
