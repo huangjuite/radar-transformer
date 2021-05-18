@@ -7,7 +7,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 from sensor_msgs.msg import LaserScan
 import numpy as np
 
-dataset = RadarDataset(remove_oulier=1.2)
+dataset = RadarDataset()
 
 indx = random.randint(0, len(dataset)-1)
 l, r = dataset[indx]
@@ -54,9 +54,13 @@ def make_marker(p, ns, i, id, c, text=False):
     mk.pose.orientation.w = 1
 
     mk.color.a = 1
-    mk.color.r = 1 - (c-min_v)/(max_v-min_v)
-    mk.color.g = 1 - (c-min_v)/(max_v-min_v)
-    mk.color.b = (c-min_v)/(max_v-min_v)
+    # mk.color.r = 1 - (c-min_v)/(max_v-min_v)
+    # mk.color.g = 1 - (c-min_v)/(max_v-min_v)
+    # mk.color.b = (c-min_v)/(max_v-min_v)
+
+    mk.color.r = 1
+    mk.color.g = 0
+    mk.color.b = 0
 
     return mk
 
