@@ -44,4 +44,8 @@ for l in reversed(lasers):
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
 
+ar2 = plt.arrow(0, 0, -0.2, 0.8,
+                width=0.05, color='g' ,label='huamn')
+plt.legend([ar2], ['human command'])
+
 plt.savefig('vis_range.png', bbox_inches='tight', dpi=200)

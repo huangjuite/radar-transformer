@@ -9,7 +9,8 @@ import numpy as np
 
 dataset = RadarDataset()
 
-indx = random.randint(0, len(dataset)-1)
+# indx = random.randint(0, len(dataset)-1)
+indx = 84090
 l, r = dataset[indx]
 print('sample: ', indx)
 
@@ -59,7 +60,7 @@ def make_marker(p, ns, i, id, c, text=False):
     # mk.color.b = (c-min_v)/(max_v-min_v)
 
     mk.color.r = 1
-    mk.color.g = 0
+    mk.color.g = 1
     mk.color.b = 0
 
     return mk
@@ -76,7 +77,7 @@ for i, radar in enumerate(r):
     mk = make_marker(p, ns, 2*i+1, id, c=v)
     tk = make_marker(p, ns, 2*i, id, c=v, text=True)
     mks.markers.append(mk)
-    mks.markers.append(tk)
+    # mks.markers.append(tk)
 pub.publish(mks)
 
 ls = LaserScan()
