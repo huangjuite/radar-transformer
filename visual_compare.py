@@ -70,7 +70,7 @@ indexs = [110379, 81471, 74911, 44003]
 f_size = 18
 marker_size = 2
 fig_names = ['mmWave', 'mmWave\nfiltered',
-             'VAE\ncnn', 'cGAN\ncnn', 'cGAN\ntransformer', 'LiDAR']
+             'VAE', 'cGAN', 'cGAN\ntransformer', 'LiDAR']
 
 fig, axs = plt.subplots(len(fig_names), len(indexs))
 fig.set_figheight(16)

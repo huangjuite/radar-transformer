@@ -1,16 +1,25 @@
 import torch
 import random
-from dataset import RadarDataset
+from dataset import RadarDataset, RadarDatasetClass
 from utils import draw_dataset
 import rospy
 from visualization_msgs.msg import Marker, MarkerArray
 from sensor_msgs.msg import LaserScan
 import numpy as np
 
+
+
 dataset = RadarDataset()
+indx = 2872
+
+# dataset = RadarDatasetClass(scene='parking')
+# indx = 14547
+
+# dataset = RadarDatasetClass(scene='outdoor')
+# indx = 6893
 
 # indx = random.randint(0, len(dataset)-1)
-indx = 84090
+
 l, r = dataset[indx]
 print('sample: ', indx)
 
@@ -30,7 +39,7 @@ def make_marker(p, ns, i, id, c, text=False):
     mk.header.stamp = rospy.Time.now()
     mk.ns = ns
     mk.id = i
-    scale = 0.1
+    scale = 0.2
 
     if text:
         mk.type = Marker.TEXT_VIEW_FACING
@@ -55,13 +64,13 @@ def make_marker(p, ns, i, id, c, text=False):
     mk.pose.orientation.w = 1
 
     mk.color.a = 1
-    # mk.color.r = 1 - (c-min_v)/(max_v-min_v)
-    # mk.color.g = 1 - (c-min_v)/(max_v-min_v)
-    # mk.color.b = (c-min_v)/(max_v-min_v)
+    mk.color.r = 1 - (c-min_v)/(max_v-min_v)
+    mk.color.g = 1 - (c-min_v)/(max_v-min_v)
+    mk.color.b = (c-min_v)/(max_v-min_v)
 
-    mk.color.r = 1
-    mk.color.g = 1
-    mk.color.b = 0
+    # mk.color.r = 1
+    # mk.color.g = 1
+    # mk.color.b = 0
 
     return mk
 

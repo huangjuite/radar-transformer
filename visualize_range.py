@@ -2,7 +2,7 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from dataset import RadarDataset
+from dataset import RadarDataset, RadarDatasetClass
 import math
 
 from utils import laser_visual, filter, pc_to_laser, laser_visual_one
@@ -11,7 +11,14 @@ from network_vae import MMvae
 from network_generator import Generator
 
 dataset = RadarDataset()
-indx = 84090
+indx = 2872
+
+# dataset = RadarDatasetClass(scene='parking')
+# indx = 14547
+
+# dataset = RadarDatasetClass(scene='outdoor')
+# indx = 6893
+
 l, rp0 = dataset[indx]
 _, rp1 = dataset[indx-1]
 _, rp2 = dataset[indx-2]
@@ -24,11 +31,14 @@ rp = filter(rp)
 r_laser_np = pc_to_laser(rp[:, 3:6])
 
 lasers = [l, r_laser_np]
+name = ['radar', 'lidar', 'human command']
 show = True
 range_limit = 4.9
 
+ax = []
+
 fig = plt.figure(figsize=(8, 8))
-for l in reversed(lasers):
+for i, l in enumerate(reversed(lasers)):
     angle = 120
     xp = []
     yp = []
@@ -39,13 +49,14 @@ for l in reversed(lasers):
         angle -= 1
     plt.xlim(-6, 6)
     plt.ylim(-6, 6)
-    plt.plot(xp, yp, '.')
+    ar, = plt.plot(xp, yp, '.', label=name[i])
+    ax.append(ar)
 
 plt.xticks(fontsize=20)
 plt.yticks(fontsize=20)
+ar = plt.arrow(0, 0, 0.1, 0.8, width=0.05, color='g', label='huamn')
+ax.append(ar)
 
-ar2 = plt.arrow(0, 0, -0.2, 0.8,
-                width=0.05, color='g' ,label='huamn')
-plt.legend([ar2], ['human command'])
+plt.legend(ax, name, prop={'size': 20}, loc='lower right')
 
 plt.savefig('vis_range.png', bbox_inches='tight', dpi=200)
