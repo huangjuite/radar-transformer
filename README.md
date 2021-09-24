@@ -7,7 +7,7 @@ demonstrate generative reconstruction for mmWave radar point clouds.
 
 - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/huangjuite/radar-transformer/blob/master/colab/train_cgan_reconstruct.ipynb) conditional Generative Adverserial Network  
 
-- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/huangjuite/radar-transformer/blob/master/colab/train_cgan_reconstruct.ipynb) conditional Generative Adverserial Network with transformer
+- [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/huangjuite/radar-transformer/blob/master/colab/train_cgan_transformer_reconstruct.ipynb) conditional Generative Adverserial Network with transformer
 
 visual compare
 
